@@ -1,0 +1,52 @@
+body {
+   overflow-y : auto;
+   background-image: url("https://upload.wikimedia.org/wikipedia/commons/b/b0/Eucheuma_farming%2C_Philippines_%285211726476%29.jpg");
+   background-repeat: no-repeat;
+   background-size: 100%;
+   background-attachment: fixed;
+   background-position: center;
+}
+
+.headerBackGround{
+    background: #C4E5C8;
+}
+.navbar.is-dark.csbNav{
+   background-color: rgb(68,84,106);
+}
+
+.csbHero {
+   /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#ed7d31+0,faee05+100 */
+   background: #134e5e;
+   background: -moz-linear-gradient(-55deg, #134e5e 0%, #71b280 100%);
+   background: -webkit-linear-gradient(-55deg, #134e5e 0%,#71b280 100%);
+   background: linear-gradient(145deg, #134e5e 0%,#71b280 100%);
+   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ed7d31', endColorstr='#faee05',GradientType=1 );
+}
+
+.csbHead {
+    color: antiquewhite;
+}
+
+.button{
+    background-color: #3C7A6C;
+    color:white;
+    font-weight: bold;
+}
+
+.redbutton{
+    background-color: #f7786b;
+}
+
+#frame {
+    width:  35cm;//auto;//80%;  
+    height: 20cm;//auto;//20cm;
+}
+
+#outerFrame {
+    width:  1200px;//800px;
+    height: 800px;//800px;
+}
+
+#centr {
+    justify-content: center;
+}
