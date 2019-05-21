@@ -51,7 +51,7 @@ A **SIM800L** module connects to internet through GPRS and transmits the data as
 The project is powered by a 6000 mAh power bank.
 You can find the Arduino sketch in /arduino/datalogger.ino.
 
- **- Used Arduino libraries**
+-  **Used Arduino libraries**
     - BH1750.h
     - OneWire.h
     - DallasTemperature.h
@@ -83,7 +83,7 @@ function which is convoluted with the original signal at every position in time 
 In contrast to the Fourier transform, that gives a perfect frequency resolution but no time resolution, the **CWT** is capable of mediating between the two opposing properties of time resolution and frequency resolution (Heisenberg's uncertainty principle).
 
 For high frequencies the time resolution outweighs the frequency resolution, whereas in low frequencies the time cannot be determined exactly, but the frequency is precise. This is beneficial, because when fast fluctuations are in the data it is not necessarily important to know the exact frequency, but the time when it happened. And when there is a slowly oscillating signal it is favourable to identify the underlying frequency rather than the time point it occurred.
-In this analysis the single spiked Ricker wavelet (also called Mexican hat wavelet) is used, which corresponds to the negative second derivative of the gaussian function.
+In this analysis the single spiked **Ricker wavelet** (also called Mexican hat wavelet) is used, which corresponds to the negative second derivative of the gaussian function.
 
 ![Wavelet overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/PicOverview.png)
 ![Wavelet detail](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/PicDetail2.png)
