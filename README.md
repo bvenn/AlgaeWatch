@@ -69,18 +69,19 @@ I noticed that heavy rain events had a big influence on the water temperatures. 
 
 ![Rainevent](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/rainevent.png)
 
-### rain data incorporation
-To incorporate rain data in the acquired measurements I made use of the Climate Data Center of the “Deutscher Wetterdienst” ([DWD](https://www.dwd.de/EN/climate_environment/cdc/cdc.html;jsessionid=AA27C86FF41C71805E761B7F4B1D957D.live21061). Multiple weather parameters of hundreds of weather stations all over Germany are stored and updated on a daily basis. Coincidentally,
+### Rain data incorporation
+To incorporate rain data in the acquired measurements I made use of the Climate Data Center of the “Deutscher Wetterdienst” ([DWD](https://www.dwd.de/EN/climate_environment/cdc/cdc.html;jsessionid=AA27C86FF41C71805E761B7F4B1D957D.live21061)). Multiple weather parameters of hundreds of weather stations all over Germany are stored and updated on a daily basis. Coincidentally,
 such a station is right next to the pond where the temperature sensors are located (station id: 2486; latitude: 49.4262; longitude: 7.7557). The amount of rain is given every 10 minutes as mm / m² / 10min which indicates the litres of rain fallen on one square meter during the last ten minutes.
 Because the most recent rain data have not yet completed the full quality control, the data cannot be integrated in real time but has to be fetched once in a while.
 
-### continuous wavelet transform
+### Continuous wavelet transform
 
 To examine the temperature data with respect to reoccurring patterns and to identify anomalies an approach called continuous wavelet transform (CWT) is applied. The CWT is a multiresolution analysis
 method to gain insights into frequency components of a signal with simultaneous temporal classification. Wavelet in this context stands for small wave and describes a window
 function which is convoluted with the original signal at every position in time ([Wavelet tutorial](http://users.rowan.edu/~polikar/WTtutorial.html)). Many wavelets exist, every one of them is useful for a certain application, thereby ‘searching’ for specific patterns in the data. By increasing the dimensions (scale) of the wavelet function, different frequency patterns are studied.
-Many wavelets exist, every one of them is useful for a certain application, thereby scanning the data for specific patterns.
+
 In contrast to the Fourier transform, that gives a perfect frequency resolution but no time resolution, the CWT is capable of mediating between the two opposing properties of time resolution and frequency resolution (Heisenberg's uncertainty principle).
+
 For high frequencies the time resolution outweighs the frequency resolution, whereas in low frequencies the time cannot be determined exactly, but the frequency is precise. This is beneficial, because when fast fluctuations are in the data it is not necessarily important to know the exact frequency, but the time when it happened. And when there is a slowly oscillating signal it is favourable to identify the underlying frequency rather than the time point it occurred.
 In this analysis the single spiked Ricker wavelet (also called Mexican hat wavelet) is used, which corresponds to the negative second derivative of the gaussian function.
 
@@ -128,7 +129,7 @@ To apply the continuous wavelet transform, the third button can be clicked, ther
 
 ![Wavelet1](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/08_wavelet1.png)
 
-You can clearly see high correlation values obtained at frequencies of one day and two weeks. While the high correlations at a one-day frequency is because of obvious reasons, the high correlations at 2-week-periods could be due to high/low-pressure areas (or something else, I'm really no meterologist).
+You can clearly see high correlation values obtained at frequencies of one day and two weeks. While the high correlations at a one-day frequency is because of obvious reasons, the high correlations at 2-week-periods could be due to high/low-pressure areas (or something else, I really am no meterologist;)).
 Correlations in winter time not only are lower because of the frozen lake, but also because of the reduced daily temperature fluctuations. In the following you can see the cwt of the deepest sensor (T6).
 
 ![Wavelet2](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/09_wavelet2.png)
@@ -146,8 +147,8 @@ You will find more documentation about the used F# components at the following p
 * [Fulma](https://fulma.github.io/Fulma/)
 
 The project runs on a web server locally, but hosting SAFE stack solutions on a private server via the run command proved difficult.
-While i was able to make the api work for server requests, i was not able to host the site itself. This seems to be an issue proxying request between local host and the actual server port
+While i was able to make the api work for server requests, i was not able to host the site itself. This seems to be an issue proxying request between local host and the actual server port. 
 As soon as I find a solution I am going to post its adress here.
 
 
-With this project I hope to contribute to increasing the popularity of F# in signal processing even further. 
+With this project I hope to contribute to increasing the popularity of F# in signal processing and IoT even further. 
