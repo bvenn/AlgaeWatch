@@ -4,28 +4,21 @@ AlgaeWatch is a data logging project emerged from the interest in biological iss
 To study the naturally occurring variations of the water temperature in ponds and to determine its stages in the yearly development I decided to use a data logger to collect water temperatures in several depths. I quickly realised most commercially available loggers lack at least one of the following criteria:
 
  - water resistance (of the sensors themselves, as well as the main module)
-
  - energy consumption
-  - when used in remote areas the sensor should run independently for many days
-
+    - when used in remote areas the sensor should run independently for many days
  - size
-  - a small size is desired to ensure mobility
-
+    - a small size is desired to ensure mobility
  - flexibility (modifications)
-  - if more data should be gathered, additional sensors should be added easily
-
+    - if more data should be gathered, additional sensors should be added easily
  - costs
-  - the project was aimed to cost less than 60,- €
-
+    - the project was aimed to cost less than 60,- €
  - remote monitoring
-  - to make the data collection easier and automated
-  - to be able to identify problems with the data logging
-
+     - to make the data collection easier and automated
+    - to be able to identify problems with the data logging
  - automated data analysis
-  - to recognize hidden patterns within the data
-
+    - to recognize hidden patterns within the data
  - automated visualization
-  - to identify the right time point for biological samples to be taken from the pond/river/lake etc.
+    - to identify the right time point for biological samples to be taken from the pond/river/lake etc.
 
 A year ago, I already build an Arduino based data logger, that saves the data on a memory card. It is powered by a power bank that has to be replaced every 8-10 days. It quickly turned out, that problems with the power supply stability made it necessary to ensure monitoring even outside the 9-day period. But not only design-related issues occurred. Sometimes heavy weather events distort the sensor location, or drought periods lowered the water level so that the top sensor has already jetted out of the water.
 Now, a year later I found a solution addressing the above-mentioned problems and present an improved concept, combining the broad possibilities of microcontrollers and the power of F# together with SAFE to make data logging more convenient and sophisticated.
@@ -33,11 +26,11 @@ Now, a year later I found a solution addressing the above-mentioned problems and
 ### This project includes:
  - Real time data logging and transmission using Arduino resources
  - [SQLite database management](https://www.sqlite.org/about.html).
- - [SAFE](https://safe-stack.github.io/) 	
-  - 'an end-to-end, functional-first STACK for cloud-ready web development that emphasizes type-safe programming'
+ - [SAFE](https://safe-stack.github.io/)
+   - 'an end-to-end, functional-first STACK for cloud-ready web development that emphasizes type-safe programming'
  - Automated FTP server data integration
  - Continuous wavelet transform for data analysis
- - [FSharp.Plotly visualization](https://github.com/muehlhaus/FSharp.Plotly
+ - [FSharp.Plotly visualization](https://github.com/muehlhaus/FSharp.Plotly)
 
 
 To measure the temperatures several DS18B20 waterproof sensors were placed in a pond, hooked up
@@ -48,13 +41,13 @@ The project ist powered by a 6000 mAh power bank.
 You can find the arduino sketch in /arduino/datalogger.ino.
 
  - Used Arduino libraries
-  - BH1750.h
-  - OneWire.h
-  - DallasTemperature.h
-  - DS3231.h
-  - Narcoleptic.h
-  - SoftwareSerial.h
-  - Wire.h
+    - BH1750.h
+    - OneWire.h
+    - DallasTemperature.h
+    - DS3231.h
+    - Narcoleptic.h
+    - SoftwareSerial.h
+    - Wire.h
 
 
 The transmitted data is provided with a timestamp by the webserver and stored in a SQLite database.
@@ -74,8 +67,8 @@ In contrast to the fourier transform, that gives a perfect frequency resolution 
 For high frequencies the time resolution outweighs the frequency resolution, whereas in low frequencies the time cannot be determined exactly, but the frequency is precise. This is beneficial, because when fast fluctuations are in the data it is not necessarily important to know the exact frequency, but the time when it happened. And when there is a slowly oscillating signal it is favourable to identify the unterlying frequency rather than the time point it occurred.
 In this analysis the single spiked Ricker wavelet (also called Mexican hat wavelet) is used, which corresponds to the negative second derivative of the gaussian function.
 
-![Wavelet overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/screenshots/PicOverview.png)
-![Wavelet detail](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/screenshots/PicDetail2.png)
+![Wavelet overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/PicOverview.png)
+![Wavelet detail](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/PicDetail2.png)
 
 To visualize the collected data, FSharp.Plotly is used, an interactive F# charting library using plotly.js ([Plotly](https://github.com/muehlhaus/FSharp.Plotly)).
 
@@ -93,10 +86,10 @@ fake build -t Run
 
 After entering the `fake build -t Run` command, you can open your Browser on http://localhost:8080/ and visiting the web page.
 
-![Home screen]( https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/screenshots/01_Home.png)
+![Home screen]( https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/01_Home.png)
 There are four options to choose from. By clicking `show last year` an interactive Plotly chart is loaded.
 
-![Overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/screenshots/02_Overview.pngs=200)
+![Overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/02_Overview.pngs=200)
 
 
 
