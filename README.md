@@ -4,21 +4,21 @@ AlgaeWatch is a bioinformatics/IoT data logging project emerged from the interes
 
 To study the naturally occurring variations of the water temperature in ponds and to determine its stages in the yearly development I decided to use a data logger to collect water temperatures in several depths. Additionally, I aimed to collect light intensity data for monitoring the cloud conditions. I quickly realised most commercially available loggers lack at least one of the following criteria:
 
- - water resistance (of the sensors themselves, as well as the main module)
- - energy consumption
+1. water resistance (of the sensors themselves, as well as the main module)
+2. energy consumption
     - when used in remote areas the sensor should run independently for many days
- - size
+3. size
     - a small size is desired to ensure mobility
- - flexibility (modifications)
+4. flexibility (modifications)
     - if more data should be gathered, additional sensors should be added easily
- - costs
+5. costs
     - the project was aimed to cost less than 60,- €
- - remote monitoring
+6. remote monitoring
      - to make the data collection easier and automated
     - to be able to identify problems with the data logging
- - automated data analysis
+7. automated data analysis
     - to recognize hidden patterns within the data
- - automated visualization
+8. automated visualization
     - to identify the right time point for biological samples to be taken from the pond/river/lake etc.
 
 A year ago, I already build an Arduino based data logger, that saves the data on a memory card. It is powered by a power bank that has to be replaced every 8-10 days. It quickly turned out, that problems with the power supply stability made it necessary to ensure monitoring even outside the 9-day period. But not only design-related issues occurred. Sometimes heavy weather events distort the sensor location, or drought periods lowered the water level so that the top sensor has already jetted out of the water.
