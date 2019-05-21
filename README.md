@@ -1,24 +1,24 @@
 # AlgaeWatch
 
-AlgaeWatch is a bioinformatics/IoT data logging project emerged from the interest in biological issues concerning climate change and its influence on water bodies and the organisms living in them. In previous studies during my bachelor’s programme, I dealt with the algae’s response to elevated water temperatures.
+AlgaeWatch is a **bioinformatics/IoT** data logging project emerged from the interest in biological issues concerning climate change and its influence on water bodies and the organisms living in them. In previous studies during my bachelor’s programme, I dealt with the algae’s response to elevated water temperatures.
 
 To study the naturally occurring variations of the water temperature in ponds and to determine its stages in the yearly development I decided to use a data logger to collect water temperatures in several depths. Additionally, I aimed to collect light intensity data for monitoring the cloud conditions. I quickly realised most commercially available loggers lack at least one of the following criteria:
 
-1. water resistance (of the sensors themselves, as well as the main module)
-2. energy consumption
+1. **water resistance (of the sensors themselves, as well as the main module)**
+2. **energy consumption**
     - when used in remote areas the sensor should run independently for many days
-3. size
+3. **size**
     - a small size is desired to ensure mobility
-4. flexibility (modifications)
+4. **flexibility (modifications)**
     - if more data should be gathered, additional sensors should be added easily
-5. costs
+5. **costs**
     - the project was aimed to cost less than 60,- €
-6. remote monitoring
+6. **remote monitoring**
      - to make the data collection easier and automated
     - to be able to identify problems with the data logging
-7. automated data analysis
+7. **automated data analysis**
     - to recognize hidden patterns within the data
-8. automated visualization
+8. **automated visualization**
     - to identify the right time point for biological samples to be taken from the pond/river/lake etc.
 
 A year ago, I already build an Arduino based data logger, that saves the data on a memory card. It is powered by a power bank that has to be replaced every 8-10 days. It quickly turned out, that problems with the power supply stability made it necessary to ensure monitoring even outside the 9-day period. But not only design-related issues occurred. Sometimes heavy weather events distort the sensor location, or drought periods lowered the water level so that the top sensor has already jetted out of the water.
@@ -44,14 +44,14 @@ Now, a year later I found a solution addressing the above-mentioned problems and
  - [FSharp.Plotly visualization](https://github.com/muehlhaus/FSharp.Plotly)
 
 
-To measure the temperatures several DS18B20 waterproof sensors were placed in a pond, hooked up
-with an Arduino Nano in waterproof cases. For light measurements a BH1750 light sensor was positioned
-40 cm above ground on a pipe stuck in the ground. To acquire the exact time of the measurements, a DS3231 real time clock was used.
-A SIM800L module connects to internet through GPRS and transmits the data as a JSON string via POST request to the web API.
+To measure the temperatures several **DS18B20** waterproof sensors were placed in a pond, hooked up
+with an **Arduino Nano** in waterproof cases. For light measurements a **BH1750** light sensor was positioned
+40 cm above ground on a pipe stuck in the ground. To acquire the exact time of the measurements, a **DS3231** real time clock was used.
+A **SIM800L** module connects to internet through GPRS and transmits the data as a JSON string via POST request to the web API.
 The project is powered by a 6000 mAh power bank.
 You can find the Arduino sketch in /arduino/datalogger.ino.
 
- - Used Arduino libraries
+ **- Used Arduino libraries**
     - BH1750.h
     - OneWire.h
     - DallasTemperature.h
@@ -61,7 +61,7 @@ You can find the Arduino sketch in /arduino/datalogger.ino.
     - Wire.h
 
 
-The data is processed to a JSON string by the Arduino and transmitted via GPRS. The received data is provided with a timestamp by the webserver and stored in a SQLite database.
+The data is processed to a JSON string by the Arduino and transmitted via GPRS. The received data is provided with a timestamp by the webserver and stored in a **SQLite database**.
 For compatibility both data/time indications are stored in the following format "yyMMddHHmmss". All in all, six temperature measurements are stored together with one
 light intensity value. 
 
@@ -70,17 +70,17 @@ I noticed that heavy rain events had a big influence on the water temperatures. 
 ![Rainevent](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/rainevent.png)
 
 ### Rain data incorporation
-To incorporate rain data in the acquired measurements I made use of the Climate Data Center of the “Deutscher Wetterdienst” ([DWD](https://www.dwd.de/EN/climate_environment/cdc/cdc.html;jsessionid=AA27C86FF41C71805E761B7F4B1D957D.live21061)). Multiple weather parameters of hundreds of weather stations all over Germany are stored and updated on a daily basis. Coincidentally,
+To incorporate rain data in the acquired measurements I made use of the Climate Data Center of the **“Deutscher Wetterdienst”** ([DWD](https://www.dwd.de/EN/climate_environment/cdc/cdc.html;jsessionid=AA27C86FF41C71805E761B7F4B1D957D.live21061)). Multiple weather parameters of hundreds of weather stations all over Germany are stored and updated on a daily basis. Coincidentally,
 such a station is right next to the pond where the temperature sensors are located (station id: 2486; latitude: 49.4262; longitude: 7.7557). The amount of rain is given every 10 minutes as mm / m² / 10min which indicates the litres of rain fallen on one square meter during the last ten minutes.
 Because the most recent rain data have not yet completed the full quality control, the data cannot be integrated in real time but has to be fetched once in a while.
 
 ### Continuous wavelet transform
 
-To examine the temperature data with respect to reoccurring patterns and to identify anomalies an approach called continuous wavelet transform (CWT) is applied. The CWT is a multiresolution analysis
+To examine the temperature data with respect to reoccurring patterns and to identify anomalies an approach called continuous wavelet transform (**CWT**) is applied. The **CWT** is a multiresolution analysis
 method to gain insights into frequency components of a signal with simultaneous temporal classification. Wavelet in this context stands for small wave and describes a window
 function which is convoluted with the original signal at every position in time ([Wavelet tutorial](http://users.rowan.edu/~polikar/WTtutorial.html)). Many wavelets exist, every one of them is useful for a certain application, thereby ‘searching’ for specific patterns in the data. By increasing the dimensions (scale) of the wavelet function, different frequency patterns are studied.
 
-In contrast to the Fourier transform, that gives a perfect frequency resolution but no time resolution, the CWT is capable of mediating between the two opposing properties of time resolution and frequency resolution (Heisenberg's uncertainty principle).
+In contrast to the Fourier transform, that gives a perfect frequency resolution but no time resolution, the **CWT** is capable of mediating between the two opposing properties of time resolution and frequency resolution (Heisenberg's uncertainty principle).
 
 For high frequencies the time resolution outweighs the frequency resolution, whereas in low frequencies the time cannot be determined exactly, but the frequency is precise. This is beneficial, because when fast fluctuations are in the data it is not necessarily important to know the exact frequency, but the time when it happened. And when there is a slowly oscillating signal it is favourable to identify the underlying frequency rather than the time point it occurred.
 In this analysis the single spiked Ricker wavelet (also called Mexican hat wavelet) is used, which corresponds to the negative second derivative of the gaussian function.
@@ -88,7 +88,7 @@ In this analysis the single spiked Ricker wavelet (also called Mexican hat wavel
 ![Wavelet overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/PicOverview.png)
 ![Wavelet detail](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/PicDetail2.png)
 
-Clearly the correlations are highest for one-day and one-year periods, but also other interesting patterns appear.
+Clearly the correlations are highest for **one-day** and **one-year** periods, but also other interesting patterns appear.
 
 
 To visualize the collected data, FSharp.Plotly is used, an interactive F# charting library using plotly.js ([Plotly](https://github.com/muehlhaus/FSharp.Plotly)).
@@ -129,7 +129,7 @@ To apply the continuous wavelet transform, the third button can be clicked, ther
 
 ![Wavelet1](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/08_wavelet1.png)
 
-You can clearly see high correlation values obtained at frequencies of one day and two weeks. While the high correlations at a one-day frequency is because of obvious reasons, the high correlations at 2-week-periods could be due to high/low-pressure areas (or something else, I really am no meterologist;)).
+You can clearly see high correlation values obtained at frequencies of one day and two weeks. While the high correlations at a one-day frequency is because of obvious reasons, the high correlations at 2-week-periods could be due to high/low-pressure areas *(or something else, I really am no meterologist;))*.
 Correlations in winter time not only are lower because of the frozen lake, but also because of the reduced daily temperature fluctuations. In the following you can see the cwt of the deepest sensor (T6).
 
 ![Wavelet2](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/09_wavelet2.png)
@@ -151,4 +151,4 @@ While i was able to make the api work for server requests, i was not able to hos
 As soon as I find a solution I am going to post its adress here.
 
 
-With this project I hope to contribute to increasing the popularity of F# in signal processing and IoT even further. 
+**With this project I hope to contribute to increasing the popularity of F# in signal processing and IoT even further.** 
