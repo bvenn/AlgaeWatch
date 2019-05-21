@@ -151,4 +151,4 @@ While i was able to make the api work for server requests, i was not able to hos
 As soon as I find a solution I am going to post its adress here.
 
 
-**With this project I hope to contribute to increasing the popularity of F# in signal processing and IoT even further.** 
+**By finishing AlgaeWatch I am able to monitor the state of the pond and get real time insights into the environmental conditions the organisms have to face. With this project I hope to contribute to increasing the popularity of F# in signal processing and IoT even further.** 
