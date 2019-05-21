@@ -1,7 +1,7 @@
 # AlgaeWatch
 
 AlgaeWatch is a data logging project emerged from the interest in biological issues concerning climate change and its influence on water bodies and the organisms living in them. In previous studies during my bachelor’s programme, I dealt with the algae’s response to elevated water temperatures.
-To study the naturally occurring variations of the water temperature in ponds and to determine its stages in the yearly development I decided to use a data logger to collect water temperatures in several depths. I quickly realised most commercially available loggers lack at least one of the following criteria:
+To study the naturally occurring variations of the water temperature in ponds and to determine its stages in the yearly development I decided to use a data logger to collect water temperatures in several depths. Additionally I aimed to collect light intensity data for monitoring the cloud conditions. I quickly realised most commercially available loggers lack at least one of the following criteria:
 
  - water resistance (of the sensors themselves, as well as the main module)
  - energy consumption
@@ -23,11 +23,20 @@ To study the naturally occurring variations of the water temperature in ponds an
 A year ago, I already build an Arduino based data logger, that saves the data on a memory card. It is powered by a power bank that has to be replaced every 8-10 days. It quickly turned out, that problems with the power supply stability made it necessary to ensure monitoring even outside the 9-day period. But not only design-related issues occurred. Sometimes heavy weather events distort the sensor location, or drought periods lowered the water level so that the top sensor has already jetted out of the water.
 Now, a year later I found a solution addressing the above-mentioned problems and present an improved concept, combining the broad possibilities of microcontrollers and the power of F# together with SAFE to make data logging more convenient and sophisticated.
 
+### Pond:
+
+![Pond1](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/20180621_091458.jpg)
+
+### Location of Sensors:
+
+![Pond2](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/Pond.png)
+
+
+
 ### This project includes:
  - Real time data logging and transmission using Arduino resources
  - [SQLite database management](https://www.sqlite.org/about.html).
  - [SAFE](https://safe-stack.github.io/)
-   - 'an end-to-end, functional-first STACK for cloud-ready web development that emphasizes type-safe programming'
  - Automated FTP server data integration
  - Continuous wavelet transform for data analysis
  - [FSharp.Plotly visualization](https://github.com/muehlhaus/FSharp.Plotly)
@@ -55,9 +64,13 @@ For compatibility both data/time indications are stored in the following format 
 light intensity value. 
 
 I noticed that heavy rain events had a big influence on the water temperatures. Especially in the top layer a drop of (> 5°C (9 °F) in 15 minutes) could be observed (27. May 2018).
+
+![Rainevent](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/rainevent.png)
+
 To incorporate rain data in the acquired measurements I made use of the Climate Data Center of the “Deutscher Wetterdienst” ([DWD](https://www.dwd.de/EN/climate_environment/cdc/cdc.html;jsessionid=AA27C86FF41C71805E761B7F4B1D957D.live21061). Multiple weather parameters of hundreds of weather stations all over Germany are stored and updated on a daily basis. Coincidentally,
 such a station is right next to the pond where the temperature sensors are located (station id: 2486; latitude: 49.4262; longitude: 7.7557). The amount of rain is given every 10 minutes as mm / m² / 10min which indicates the litres of rain fallen on one square meter during the last ten minutes.
 Because the most recent rain data have not yet completed the full quality control, the data cannot be integrated in real time but has to be fetched once in a while.
+
 
 To examine the temperature data with respect to reoccurring patterns and to identify anomalies an approach called continuous wavelet transform (CWT) is applied. The CWT is a multiresolution analysis
 method to gain insights into frequency components of a signal with simultaneous temporal classification. Wavelet in this context stands for small wave and describes a window
@@ -71,6 +84,8 @@ In this analysis the single spiked Ricker wavelet (also called Mexican hat wavel
 ![Wavelet detail](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/PicDetail2.png)
 
 To visualize the collected data, FSharp.Plotly is used, an interactive F# charting library using plotly.js ([Plotly](https://github.com/muehlhaus/FSharp.Plotly)).
+Last years data collected with the old sensor version is included, so analysis can also performed on these data.
+
 
 ## Installation
 
@@ -87,10 +102,28 @@ fake build -t Run
 After entering the `fake build -t Run` command, you can open your Browser on http://localhost:8080/ and visiting the web page.
 
 ![Home screen]( https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/01_Home.png)
-There are four options to choose from. By clicking `show last year` an interactive Plotly chart is loaded.
 
-![Overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/02_Overview.pngs=200)
+There are four options to choose from. By clicking `show last year` an interactive Plotly chart is loaded. This chart shows temperature data from all 6 temperature sensors, the light sensor, and the fetched rain data from the DWD.
+Increasing indices [T1 .. T6] imply lower depth of the sensor. It is obvious, that there were some connection problems in the initial phase of the sensor and you can see how Sensor T2 was no longer covered with water during autumn 2018.
+From december to february the pond was frozen in the top layer, but the deepest sensors recorded temperatures up to 7.5 °C. The light sensor measures in arbitrary units from 0 to 1024. The rain data show clearly the severe drought in germany in autumn 2018.
 
+![Overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/02_Overview.png)
+
+
+When clicking on the second button "show from-to" you can specify the time period the plot should cover. Hereby, the data is aquired from the SQLite data base.
+
+![Selection](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/03_Selection1.png)
+
+![Chunk](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/05_chunk.png)
+
+To apply the continuous wavelet transform, the third button can be clicked, thereby specifying again the time period, and the sensor number, the transform should be applied on.
+
+![WaveletSelection](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/06_waveletselection.png)
+
+
+
+![Wavelet1](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/08_wavelet1.png)
+![Wavelet2](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/09_wavelet2.png)
 
 
 ### Receiving data from logger
@@ -109,3 +142,5 @@ You will find more documentation about the used F# components at the following p
 * [Fable.Remoting](https://zaid-ajaj.github.io/Fable.Remoting/)
 * [Fulma](https://fulma.github.io/Fulma/)
 
+
+I hope this project is going to help increasing the awareness of the power of F# and open source projects to continue 
