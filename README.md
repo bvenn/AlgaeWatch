@@ -148,7 +148,7 @@ You will find more documentation about the used F# components at the following p
 
 The project runs on a web server locally, but hosting SAFE stack solutions on a private server via the run command proved difficult.
 While I was able to make the api work for server requests, I was not able to host the site itself. This seems to be an issue proxying request between local host and the actual server port. 
-As soon as I find a solution I am going to post its adress here.
+As soon as I find a solution I am going to create an issue with the adress, to not violate the submission rules of the Applied F# challenge.
 
 *Note: To explore the interactive chart of the measurements from May 2018 to May 2019 you can download the overview plot as lastYearSmall.txt in /src/Server/content/lastYearSmall.txt, renaming it from .txt to .html and open the interactive chart in your browser!*
 
