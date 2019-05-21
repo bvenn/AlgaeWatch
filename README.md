@@ -1,28 +1,114 @@
-# SAFE Template
+# AlgaeWatch
 
-This template can be used to generate a full-stack web application using the [SAFE Stack](https://safe-stack.github.io/). It was created using the dotnet [SAFE Template](https://safe-stack.github.io/docs/template-overview/). If you want to learn more about the template why not start with the [quick start](https://safe-stack.github.io/docs/quickstart/) guide?
+AlgaeWatch is a data logging project emerged from the interest in biological issues concerning climate change and its influence on water bodies and the organisms living in them. In previous studies during my bachelor’s programme, I dealt with the algae’s response to elevated water temperatures.
+To study the naturally occurring variations of the water temperature in ponds and to determine its stages in the yearly development I decided to use a data logger to collect water temperatures in several depths. I quickly realised most commercially available loggers lack at least one of the following criteria:
 
-## Install pre-requisites
+ - water resistance (of the sensors themselves, as well as the main module)
 
-You'll need to install the following pre-requisites in order to build SAFE applications
+ - energy consumption
+  - when used in remote areas the sensor should run independently for many days
 
-* The [.NET Core SDK](https://www.microsoft.com/net/download)
-* [FAKE 5](https://fake.build/) installed as a [global tool](https://fake.build/fake-gettingstarted.html#Install-FAKE)
-* The [Yarn](https://yarnpkg.com/lang/en/docs/install/) package manager (you an also use `npm` but the usage of `yarn` is encouraged).
-* [Node LTS](https://nodejs.org/en/download/) installed for the front end components.
-* If you're running on OSX or Linux, you'll also need to install [Mono](https://www.mono-project.com/docs/getting-started/install/).
+ - size
+  - a small size is desired to ensure mobility
 
-## Work with the application
+ - flexibility (modifications)
+  - if more data should be gathered, additional sensors should be added easily
 
-To concurrently run the server and the client components in watch mode use the following command:
+ - costs
+  - the project was aimed to cost less than 60,- €
+
+ - remote monitoring
+  - to make the data collection easier and automated
+  - to be able to identify problems with the data logging
+
+ - automated data analysis
+  - to recognize hidden patterns within the data
+
+ - automated visualization
+  - to identify the right time point for biological samples to be taken from the pond/river/lake etc.
+
+A year ago, I already build an Arduino based data logger, that saves the data on a memory card. It is powered by a power bank that has to be replaced every 8-10 days. It quickly turned out, that problems with the power supply stability made it necessary to ensure monitoring even outside the 9-day period. But not only design-related issues occurred. Sometimes heavy weather events distort the sensor location, or drought periods lowered the water level so that the top sensor has already jetted out of the water.
+Now, a year later I found a solution addressing the above-mentioned problems and present an improved concept, combining the broad possibilities of microcontrollers and the power of F# together with SAFE to make data logging more convenient and sophisticated.
+
+### This project includes:
+ - Real time data logging and transmission using Arduino resources
+ - [SQLite database management](https://www.sqlite.org/about.html).
+ - [SAFE](https://safe-stack.github.io/) 	
+  - 'an end-to-end, functional-first STACK for cloud-ready web development that emphasizes type-safe programming'
+ - Automated FTP server data integration
+ - Continuous wavelet transform for data analysis
+ - [FSharp.Plotly visualization](https://github.com/muehlhaus/FSharp.Plotly
+
+
+To measure the temperatures several DS18B20 waterproof sensors were placed in a pond, hooked up
+with an Arduino Nano in waterproof cases. For light measurements a BH1750 light sensor was positioned
+40 cm above ground on a pipe stuck in the ground. To aquire the exact time of the measurements, a DS3231 real time clock was used.
+A SIM800L module connects to internet through GPRS and transmits the data as a JSON string to the web service.
+The project ist powered by a 6000 mAh power bank.
+You can find the arduino sketch in /arduino/datalogger.ino.
+
+ - Used Arduino libraries
+  - BH1750.h
+  - OneWire.h
+  - DallasTemperature.h
+  - DS3231.h
+  - Narcoleptic.h
+  - SoftwareSerial.h
+  - Wire.h
+
+
+The transmitted data is provided with a timestamp by the webserver and stored in a SQLite database.
+For compatibility both data/time indications are stored in the following format "yyMMddHHmmss". All in all six temperature measurements are stored together with one
+light intensity value. 
+
+I noticed that heavy rain events had a big influence on the water temperatures. Especially in the top layer a drop of (> 5°C (9 °F) in 15 minutes) could be observed (27. May 2018).
+To incorporate rain data in the acquired measurements I made use of the Climate Data Center of the “Deutscher Wetterdienst” ([DWD](https://www.dwd.de/EN/climate_environment/cdc/cdc.html;jsessionid=AA27C86FF41C71805E761B7F4B1D957D.live21061). Multiple weather parameters of hundreds of weather stations all over Germany are stored and updated on a daily basis. Coincidentally,
+such a station is right next to the pond where the temperature sensors are located (station id: 2486; latitude: 49.4262; longitude: 7.7557). The amount of rain is given every 10 minutes as mm / m² / 10min which indicates the litres of rain fallen on one square meter during the last ten minutes.
+Because the most recent rain data have not yet completed the full quality control, the data cannot be integrated in real time but has to be fetched once in a while.
+
+To examine the temperature data with respect to reoccurring patterns and to identify anomalies an approach called continuous wavelet transform (CWT) is applied. The CWT is a multiresolution analysis
+method to gain insights into frequency components of a signal with simultaneous temporal classification. Wavelet in this context stands for small wave and describes a window
+function which is convoluted with the original signal at every position in time ([Wavelet tutorial](http://users.rowan.edu/~polikar/WTtutorial.html)). Many wavelets exist, every one of them is useful for a certain application, thereby ‘searching’ for specific patterns in the data. By increasing the dimensions (scale) of the wavelet function, different frequency patterns are studied.
+Many wavelets exist, every one of them is useful for a certain application, thereby scanning the data for specific patterns.
+In contrast to the fourier transform, that gives a perfect frequency resolution but no time resolution, the CWT is capable of mediating between the two opposing properties of time resolution and frequency resolution (Heisenberg's uncertainty principle).
+For high frequencies the time resolution outweighs the frequency resolution, whereas in low frequencies the time cannot be determined exactly, but the frequency is precise. This is beneficial, because when fast fluctuations are in the data it is not necessarily important to know the exact frequency, but the time when it happened. And when there is a slowly oscillating signal it is favourable to identify the unterlying frequency rather than the time point it occurred.
+In this analysis the single spiked Ricker wavelet (also called Mexican hat wavelet) is used, which corresponds to the negative second derivative of the gaussian function.
+
+![Wavelet overview](https://github.com/bvenn/AlgaeWatch/tree/master/src/Client/public/screenshots/PicOverview.png)
+![Wavelet detail](https://github.com/bvenn/AlgaeWatch/tree/master/src/Client/public/screenshots/PicDetail2.png)
+
+To visualize the collected data, FSharp.Plotly is used, an interactive F# charting library using plotly.js ([Plotly](https://github.com/muehlhaus/FSharp.Plotly)).
+
+## Installation
+
+Please follow the installation instructions on [SAFE Stack](https://safe-stack.github.io/docs/quickstart/) and download the project.
+
+To run the server use the following command:
 
 ```bash
 fake build -t Run
 ```
 
+## Usage
 
-## SAFE Stack Documentation
+After entering the `fake build -t Run` command, you can open your Browser on http://localhost:8080/ and visiting the web page.
 
+![Home screen](https://github.com/bvenn/AlgaeWatch/tree/master/src/Client/public/screenshots/01_home.png)
+
+There are four options to choose from. By clicking `show last year` an interactive Plotly chart is loaded.
+
+![Overview](https://github.com/bvenn/AlgaeWatch/tree/master/src/Client/public/screenshots/02_Overview.pngs=200)
+
+
+
+### Receiving data from logger
+
+
+
+
+### SAFE Stack Documentation
+
+This project is powered by [SAFE Stack](https://safe-stack.github.io/).
 You will find more documentation about the used F# components at the following places:
 
 * [Suave](https://suave.io/index.html)
@@ -31,8 +117,3 @@ You will find more documentation about the used F# components at the following p
 * [Fable.Remoting](https://zaid-ajaj.github.io/Fable.Remoting/)
 * [Fulma](https://fulma.github.io/Fulma/)
 
-If you want to know more about the full Azure Stack and all of it's components (including Azure) visit the official [SAFE documentation](https://safe-stack.github.io/docs/).
-
-## Troubleshooting
-
-* **fake not found** - If you fail to execute `fake` from command line after installing it as a global tool, you might need to add it to your `PATH` manually: (e.g. `export PATH="$HOME/.dotnet/tools:$PATH"` on unix) - [related GitHub issue](https://github.com/dotnet/cli/issues/9321)
