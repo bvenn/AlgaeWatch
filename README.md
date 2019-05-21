@@ -74,8 +74,8 @@ In contrast to the fourier transform, that gives a perfect frequency resolution 
 For high frequencies the time resolution outweighs the frequency resolution, whereas in low frequencies the time cannot be determined exactly, but the frequency is precise. This is beneficial, because when fast fluctuations are in the data it is not necessarily important to know the exact frequency, but the time when it happened. And when there is a slowly oscillating signal it is favourable to identify the unterlying frequency rather than the time point it occurred.
 In this analysis the single spiked Ricker wavelet (also called Mexican hat wavelet) is used, which corresponds to the negative second derivative of the gaussian function.
 
-![Wavelet overview](https://github.com/bvenn/AlgaeWatch/tree/master/src/Client/public/screenshots/PicOverview.png)
-![Wavelet detail](https://github.com/bvenn/AlgaeWatch/tree/master/src/Client/public/screenshots/PicDetail2.png)
+![Wavelet overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/screenshots/PicOverview.png)
+![Wavelet detail](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/screenshots/PicDetail2.png)
 
 To visualize the collected data, FSharp.Plotly is used, an interactive F# charting library using plotly.js ([Plotly](https://github.com/muehlhaus/FSharp.Plotly)).
 
@@ -93,11 +93,10 @@ fake build -t Run
 
 After entering the `fake build -t Run` command, you can open your Browser on http://localhost:8080/ and visiting the web page.
 
-![Home screen](https://github.com/bvenn/AlgaeWatch/tree/master/src/Client/public/screenshots/01_home.png)
-
+![Home screen]( https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/screenshots/01_Home.png)
 There are four options to choose from. By clicking `show last year` an interactive Plotly chart is loaded.
 
-![Overview](https://github.com/bvenn/AlgaeWatch/tree/master/src/Client/public/screenshots/02_Overview.pngs=200)
+![Overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/screenshots/02_Overview.pngs=200)
 
 
 
