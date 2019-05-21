@@ -1,4 +1,4 @@
-﻿open System.IO
+open System.IO
 open System.Net
 
 open Shared
@@ -27,18 +27,18 @@ let port =
     |> tryGetEnv |> Option.map uint16 |> Option.defaultValue 8085us
 
 
-///////////////////////
-////////DATABASE///////
-///////////////////////
+
 module Database =
-    let dbPath = __SOURCE_DIRECTORY__ + @"\db\TemperatureData.db"//Path.GetFullPath "/content"
-    
+    ///define the path of the SQLite database
+    let dbPath = __SOURCE_DIRECTORY__ + @"\db\TemperatureData.db"
+
+    ///define how to get the connection string for the data base
     let getCn() = 
         let connectionString = sprintf "Data Source=%s;Version=3" dbPath
         new SQLiteConnection(connectionString)
 
 
-
+    ///record type containing all fields stored in the data base
     type DBItem = {
         TimeStamp    : int64        
         DateTime     : int64
@@ -52,7 +52,7 @@ module Database =
         RainData     : float
         }
 
-
+    ///creates the DBItem record type
     let createDbItem ts dt t1 t2 t3 t4 t5 t6 light rain = 
         {
         TimeStamp    = ts          
@@ -65,23 +65,24 @@ module Database =
         Temperature6 = t6
         Lightsensor  = light
         RainData     = rain
-        }    
+        }
 
+    ///creates a DBItem from only strings and the data base time stamp
     let createDbItemFromString ts (dt:string) (t1:string) (t2:string) (t3:string) (t4:string) (t5:string) (t6:string) (light:string) (rain:string) = 
         createDbItem 
              ts
             (dt    |> int64)
-            (t1    |> float)//correctionValue   
-            (t2    |> float)//correctionValue
-            (t3    |> float)//correctionValue
-            (t4    |> float)//correctionValue
-            (t5    |> float)//correctionValue
-            (t6    |> float)//correctionValue
-            (light |> float)//correctionValue
-            (rain  |> float)//correctionValue
+            (t1    |> float) 
+            (t2    |> float)
+            (t3    |> float)
+            (t4    |> float)
+            (t5    |> float)
+            (t6    |> float)
+            (light |> float)
+            (rain  |> float)
 
     //creates a DataBase with two tables:
-    //1. TemperatureData with Items consisting of: TimeStamp(from Server), DateTime(from Sensor), temperature values 1 - 5, light intensity and rain amount
+    //1. TemperatureData with Items consisting of: TimeStamp(from Server), DateTime(from Sensor), temperature values 1 - 6, light intensity and rain amount
     //2. RainData with one single Item consisting of: LastFetch(last date rain data was fetched) and ID
     let initDB fileName =
         let intitTemperatureData (cn:SQLiteConnection) = 
@@ -144,20 +145,18 @@ module Database =
     ///Inserts a single TemperatureEvent into the TemperatureData table.
     ///Because rain data is fetched afterwards it is set to 0.
     ///The format is short to reduce the traffic of the arduinos GSM module:
-    let insertDbItemWithRain (data: Shared.TransmitJSON) (rain : float) (cn:SQLiteConnection)= //hier vlt cn von außen?
-        try
-            //use cn = getCn()            
-            //cn.Open()
-            let tmpItem = 
+    let insertDbItemWithRain (data: Shared.TransmitJSON) (rain : float) (cn:SQLiteConnection)=
+        try //create the item, that should be inserted to the data base
+            let tmpItem =
+                //convert the server time stamp to string
                 let timestampAsInt = System.DateTime.Now.ToString("yyMMddHHmmss") |> int64
-                let tmp = data.D
+                //convert the data logger time stamp to string
                 let dateInt = 
-                    tmp.Replace(":","").Replace(".","").Replace(" ","")
-                    //|> fun x -> x.[4..5] + x.[2..3] + x.[0..1] + x.[6..7] + x.[8..9] + x.[10..11]         
+                    let tmp = data.D
+                    tmp.Replace(":","").Replace(".","").Replace(" ","")     
                     |> fun x -> x.[6..7] + x.[2..3] + x.[0..1] + x.[8..9] + x.[10..11] + x.[12..13]  
                     |> int64
                 //"18.05.2019 16:49:10_12_4._-2._5_123.123_41"
-                //createDbItemFromString timestampAsInt dateString data.T1 tmp.[2] tmp.[3] tmp.[4] tmp.[5] tmp.[6] tmp.[7] "0." 
                 createDbItem timestampAsInt dateInt data.T1 data.T2 data.T3 data.T4 data.T5 data.T6 data.L rain
             let insertString = 
                 "INSERT INTO TemperatureData (
@@ -183,7 +182,7 @@ module Database =
                             @light,
                             @rain)"
   
-            use cmd  = new SQLiteCommand(insertString, cn)//, bt)
+            use cmd  = new SQLiteCommand(insertString, cn)
 
             cmd.Parameters.Add("@timestamp" ,System.Data.DbType.Int64) |> ignore
             cmd.Parameters.Add("@datetime"  ,System.Data.DbType.Int64) |> ignore
@@ -195,7 +194,7 @@ module Database =
             cmd.Parameters.Add("@t6"        ,System.Data.DbType.Double) |> ignore
             cmd.Parameters.Add("@light"     ,System.Data.DbType.Double) |> ignore
             cmd.Parameters.Add("@rain"      ,System.Data.DbType.Double) |> ignore
-            //filling
+            //filling of the variables
             cmd.Parameters.["@timestamp"].Value <- tmpItem.TimeStamp
             cmd.Parameters.["@datetime"].Value  <- tmpItem.DateTime
             cmd.Parameters.["@t1"].Value        <- tmpItem.Temperature1
@@ -208,25 +207,23 @@ module Database =
             cmd.Parameters.["@rain"].Value      <- tmpItem.RainData
 
             cmd.ExecuteNonQuery() |> ignore
-            //cn.Close() 
 
         with e as exn -> printfn "%s" exn.Message
 
+    ///insert an item to the data base from a transmission JSON string and rain = 0.
     let insertDbItem (transmitJSON : Shared.TransmitJSON)= 
         use cn = getCn()
         cn.Open()
         insertDbItemWithRain transmitJSON 0. cn
         cn.Close()
 
+    ///get all data base entries between date begin and date end (format: "yyMMddHHmmss"
+    let getDbItem (dateBegin: int64) (dateEnd: int64) (cn: SQLiteConnection) =  
 
-    let getDbItem (dateBegin: int64) (dateEnd: int64) (cn: SQLiteConnection) = //(tr: SQLiteTransaction)=    
-        //use cn = getCn()
-        //cn.Open()
-        //let bt = cn.BeginTransaction()
         let querystring = 
             "SELECT * FROM TemperatureData WHERE DateTime BETWEEN @begin AND @end"
         
-        let cmd = new SQLiteCommand(querystring, cn)//, tr)
+        let cmd = new SQLiteCommand(querystring, cn)
 
         cmd.Parameters.Add("@begin", System.Data.DbType.Int64) |> ignore
         cmd.Parameters.Add("@end", System.Data.DbType.Int64) |> ignore
@@ -236,14 +233,14 @@ module Database =
        
         let rec readerloop (reader:SQLiteDataReader) (acc) =
             match reader.Read() with
+                       //read out the single parameters with indices
             | true  -> readerloop reader ((reader.GetInt64(0),reader.GetInt64(1),reader.GetDouble(2),reader.GetDouble(3),reader.GetDouble(4),reader.GetDouble(5),reader.GetDouble(6),reader.GetDouble(7),reader.GetDouble(8),reader.GetDouble(9)):: acc)
             | false -> acc 
-        //cn.Close() 
         readerloop reader []
         |> List.map (fun (ts,dt,t1,t2,t3,t4,t5,t6,light,rain) -> createDbItem ts dt t1 t2 t3 t4 t5 t6 light rain)
 
 
-
+    //contains the (data*value) pairs of every sensor
     type LoggChartingData = {
             DataT1    : (System.DateTime * float) list 
             DataT2    : (System.DateTime * float) list 
@@ -255,7 +252,7 @@ module Database =
             DataRain  : (System.DateTime * float) list 
         }
 
-    /// getDbData
+    /// get LoggChartingData with dates specifying the date range
     let getDbData fromDate toDate =
         let cn = getCn() 
         cn.Open()
@@ -295,31 +292,27 @@ module Database =
 
 
 
-
-// if getDbItem 
-//    cn: use cn = getCn()
-//        cn.Open()
-//    tr: cn.BeginTransaction()  
-//
-//    after function call, end with cn.Close()  
-
-///////////////////////
-////////functions//////
+///module for data processing
 module Processing =
     
     ///Ricker, or Mexican hat wavelet
-    type Ricker = { 
+    type Ricker = {
+        //the scale of the wavelet
         Scale       : float
+        //half of the width of the wavelet
         PaddingArea : float
+        //x_value of minimum y_value
         MinimumPosX : float
+        //function that takes a x_value and gives the corresponding y_value
         RickerFun   : (float -> float)
         }
 
+    //creation function for Ricker
     let createRicker scale =  
         let rickerFun x = 
             let xx = pown x 2
             let ss = pown scale 2
-            let fakA = 2./(sqrt(3.*scale)*1.331335364)//(Math.PI**0.25))
+            let fakA = 2./(sqrt(3.*scale)*1.331335364)//(Math.PI**0.25)) calculated for efficiency
             let fakB = 1.-(xx/ss)
             let fakC = Math.E**(-xx/(2.*ss))
             fakA * fakB * fakC
@@ -336,9 +329,13 @@ module Processing =
     module Padding = 
   
         type InternalPaddingMethod =
+            //inserts random data points taken from the original data set in a huge data gap
             | Random 
+            //inserts nan values in a huge data gap
             | NaN
+            //does not insert any point internally
             | Delete
+            //inserts points lying on the linear interpolation of the two adjacent knots
             | LinearInterpolation
 
         ///Adds additional data points to the beginning and end of data (number: borderpadding; x_Value distance: minDistance; y_Value: random).
@@ -350,22 +347,25 @@ module Processing =
         let padding (data : ('a * float) []) (minDistance: float) (maxDistance : float) (getDiff: 'a -> 'a -> float) (addToXValue : 'a -> float -> 'a) (borderpadding : int) (internalPaddingMethod: InternalPaddingMethod) =
             let rnd = System.Random()
             let n = data.Length
+            ///minimal x_Value
             let minX = data |> Array.head |> fst
+            ///minimal y_Value
             let maxX = data |> Array.last |> fst
+            ///average spacing of the data points
             let avgSpacing = (getDiff maxX minX) / (float n)
-
+            ///adds 'borderpadding' number of random data points to the left
             let leftPadding     = 
                 Array.init borderpadding (fun i -> 
-                    let paddX = addToXValue minX (- (float i + 1.) * minDistance) //10.4)
+                    let paddX = addToXValue minX (- (float i + 1.) * minDistance)
                     let paddY = snd data.[rnd.Next(0,n)] //n+1
-                    paddX,paddY)//nan)
+                    paddX,paddY)
                     |> Array.rev
-
+            ///adds 'borderpadding' number of random data points to the rigth
             let rightPadding    = 
                 Array.init borderpadding (fun i -> 
-                    let paddX = addToXValue maxX ((float i + 1.) * minDistance) //10.4)
+                    let paddX = addToXValue maxX ((float i + 1.) * minDistance)
                     let paddY = snd data.[rnd.Next(0,n)] //n+1
-                    paddX,paddY//nan//
+                    paddX,paddY
                     )
 
             let fillSpaceInBetween = 
@@ -375,7 +375,7 @@ module Processing =
                         let deltaX = getDiff (fst next) (fst current)
                         let deltaY = snd next - snd current
                         deltaY/deltaX
-        
+                    //number of points to add between the adjacent points, that the distance is < minDistance
                     let pointsToAdd =
                         [1 .. int numberOfPointsToAdd]
                         |> List.map (fun interval -> 
@@ -424,6 +424,7 @@ module Processing =
                                     loop (i+1) (pointsToAdd::[current]::acc) 
 
                             else
+                                //if there is no big gap, interpolate the gap and add interpolating points
                                 let pointsToAdd = linearInterpol current next numberOfPointsToAdd xSpacing
                                 loop (i+1) (pointsToAdd::[current]::acc) 
 
@@ -432,6 +433,7 @@ module Processing =
                 loop 0 []
                 |> Array.ofSeq
             [leftPadding;fillSpaceInBetween;rightPadding] |> Array.concat
+
 
     ///Continuous wavelet transformation on non discrete data
     module CWT = 
@@ -458,23 +460,22 @@ module Processing =
             let n = data.Length
             let rickerPadd = ricker.PaddingArea
 
+            //for every point in the range of the original data perform a convolution with a wavelet and calculate
+            //the correlation value at that particular time point
             [|borderpadding .. (n-borderpadding-1)|]
-
             |> Array.map (fun i -> 
-                //printfn "%i / %i" i (n-(2*borderpadding))
-
                 let (currentX,currentY) = data.[i]
+                //calculates the product at x = 0, so the current data point
                 let transformAtX = ricker.RickerFun 0. * currentY
-
+                //calculates sum of products on the right side of the current data point
                 let rec rightSide iR acc =
                     let (nextRightX,nextRightY) = data.[i+iR]
                     let diff = getDiff nextRightX currentX 
-                    //printfn "%A\t%A\t%f\t%i\t%f\t%f" (currentX.ToString()) (nextRightX.ToString()) nextRightY iR acc diff
                     if diff > rickerPadd then
                         acc
                     else    
                         rightSide (iR + 1) (acc + ((ricker.RickerFun diff) * nextRightY))
-
+                //calculates sum of products on the left side of the current data point
                 let rec leftSide iL acc = 
                     let (nextLeftX,nextLeftY) = data.[i+iL]
                     let diff = getDiff currentX nextLeftX
@@ -484,11 +485,11 @@ module Processing =
                         leftSide (iL - 1) (acc + ((ricker.RickerFun (- diff)) * nextLeftY))
                 
                 let correlationValue = 
-                    //printfn "%i\t%9.4f\t%9.4f\t%9.4f\t%9.4f" i (rightSide 1 0.)  (leftSide -1 0.)  transformAtX ((rightSide 1 0.) + (leftSide -1 0.) + transformAtX)
                     (rightSide 1 0.) + (leftSide -1 0.) + transformAtX
                 currentX,correlationValue / (Math.Sqrt ricker.Scale)
                 )
 
+        ///all existing sensors
         type Trace =
             | T1
             | T2
@@ -499,6 +500,7 @@ module Processing =
             | Light
             | Rain
 
+        ///takes dates in the form "yyMMddHHmmss" and a trace to generate traces of the rawdata, and the wavelet transformed data
         let transformTemperatureData fromDate toDate (trace: Trace) =
             let data = Database.getDbData fromDate toDate
             let (traceName,singleTrace) = 
@@ -511,7 +513,10 @@ module Processing =
                 | T6 ->     data.DataT6    |> Array.ofList |> fun x -> "T6",x
                 | Light ->  data.DataLight |> Array.ofList |> fun x -> "Light",x  
                 | Rain ->   data.DataRain  |> Array.ofList |> fun x -> "Rain",x
-            let paddedData = 
+            ///contains the padded data
+            let paddedData =
+                //to decrease computation time, all data points are rounded to half hours.
+                //if multiple values exist, calculate the arithmetic mean of all.
                 let roundToHalfHours (arr : (System.DateTime * float)[]) =
                     arr
                     |> Array.map (fun (d,x) ->
@@ -524,11 +529,12 @@ module Processing =
                     |> Array.map (fun (groupindex,group) -> groupindex,group |> Array.averageBy (fun (date,x) -> x))
                     |> Array.sortBy fst 
 
+                //padd the reduced data with minimal datadistance of 30 min, maxGap of 1 day and borderpadding sufficient for a one-year wavelet (minutes of a year / 4.)
                 singleTrace
                 |> roundToHalfHours
                 |> fun x -> 
-                    //padd the reduced data with minimal datadistance of 30 min, maxGap of 1 day
                     Padding.padding x 30. 1440. calcTimeSpan addMinToDateTime 1008000 Padding.InternalPaddingMethod.LinearInterpolation //maxGap = 1 Day; borderpadding sufficient for Ricker 144000. (quarter year)
+            //get the correlation values of the specified trace with a defined set of wavelet scales
             let waveletTransformedData =
                 let rickerArr =    
                     //corresponds to following frequencies [days]: 0.1, 0.1, 0.2, 0.4, 0.4, 0.5, 0.5, 0.6, 0.7, 1.0, 1.2, 1.5, 1.9, 2.4, 3.0, 3.8, 4.6, 5.8, 7.0, 8.3, 10.4, 12.5, 15.4, 20.8, 29.2, 41.7
@@ -542,16 +548,16 @@ module Processing =
 
 
 
-///////////////////////
-////////charting//////
 module Charting =
    
-    ///yyMMddHHmmss
+    ///generates a 'from-to' chart (dataformat: "yyMMddHHmmss")
     let chart fromDate toDate =
+        //define a nice looking axis 
         let myAxis() =
             Axis.LinearAxis.init(Mirror=StyleParam.Mirror.All,Ticks=StyleParam.TickOptions.Inside,Showgrid=true,Showline=true)
-        
+        //get the data that should be plotted
         let chartData = Database.getDbData fromDate toDate
+
         let finalChart =
             let createTemperatureChart name list = 
                 list 
@@ -564,51 +570,60 @@ module Charting =
             let chartT4    = chartData.DataT4    |> createTemperatureChart "T4" 
             let chartT5    = chartData.DataT5    |> createTemperatureChart "T5" 
             let chartT6    = chartData.DataT6    |> createTemperatureChart "T6" 
-            let chartLight = chartData.DataLight |> List.rev |> fun d -> Chart.Line(d,Name = "Light"        (*,Color="#ffce0a"*)) |> Chart.withAxisAnchor(Y=2)
-            let chartRain  = chartData.DataRain  |> List.rev |> fun d -> Chart.Line(d,Name = "Precipitation"(*,Color="#1569e"*)) |> Chart.withAxisAnchor(Y=3)
-            
+            let chartLight = chartData.DataLight |> List.rev |> fun d -> Chart.Line(d,Name = "Light"        ) |> Chart.withAxisAnchor(Y=2)
+            let chartRain  = chartData.DataRain  |> List.rev |> fun d -> Chart.Line(d,Name = "Precipitation") |> Chart.withAxisAnchor(Y=3)
+
+            //combine all charts and add styling
             Chart.Combine[chartT1;chartT2;chartT3;chartT4;
                             chartT5;chartT6;chartLight;chartRain]
+            //transform Axis
             |> Chart.withX_Axis(myAxis())  
-            |> Chart.withY_Axis(myAxis())                        
+            |> Chart.withY_Axis(myAxis())
+            //define the date axis
             |> Chart.withX_AxisStyle("Date",Domain=(0., 0.85),Showgrid=false)
+            //define the temperature axis in a range from -20C to 40C
             |> Chart.withY_AxisStyle("Temperature [°C]",            MinMax=(-20.,40.),    Side=StyleParam.Side.Left,Id=1)
+            //define the light intensity axis in a range from -750 to 5000
             |> Chart.withY_AxisStyle("Light intensity",             MinMax=(-750.,5000.),Showgrid=false,  Side=StyleParam.Side.Right,Id=2,Overlaying=StyleParam.AxisAnchorId.Y 1)
+            //define the rain axis in a range from 0 to 35 mm/m^2/10min
             |> Chart.withY_AxisStyle("Precipitation [mm/m^2/10min]",MinMax=(0.,35.),Showgrid=false,    Side=StyleParam.Side.Right,Id=3,Overlaying=StyleParam.AxisAnchorId.Y 1,Position=0.9)
+            //define the title from the date range
             |> Chart.withTitle (sprintf "data from %s to %s" ((string fromDate).[0..5]) ((string toDate).[0..5]))
             |> Chart.withSize(1200.,700.)
             |> GenericChart.toEmbeddedHTML
+            //to write the chart as html
             //|> fun x -> System.IO.File.WriteAllLines (@"C:\Users\bvenn\Documents\Projects\SFB\AlgaeWatch\FSharpChallenge\oldPlotSmall.html",[|x|])
         finalChart        
 
+    //get the wavelet transformed data and plot them together with the original raw trace
     let waveletChart fromDate toDate (trace: Processing.CWT.Trace) yAxisName =
         let yAxis() =
             Axis.LinearAxis.init(Mirror=StyleParam.Mirror.All,Ticks=StyleParam.TickOptions.Inside,Showgrid=true,Showline=true)
         
         let rownames = 
-            //[|"0.08d";"0.13d";"0.17d";"0.25d";"0.33d";"0.46d";"0.54d";"0.67d";"0.79d";"1.00d";"1.21d";"1.50d";"1.88d";"2.42d";"3.00d";"3.75d";
-            // "4.58d";"5.83d";"7.08d";"8.33d";"10.42d";"12.50d";"15.42d";"20.83d";"29.17d";"41.67d";|]
             [|"0.08";"0.13";"0.17";"0.25";"0.33";"0.46";"0.54";"0.67";"0.79";"1.00";"1.21";"1.50";"1.88";"2.42";"3.00";"3.75";
              "4.58";"5.83";"7.08";"8.33";"10.42";"12.50";"15.42";"20.83";"29.17";"41.67";|]
             |> Array.map (fun x -> x + " days")
             |> Array.rev
+
         let ((tracename,traceRaw),traceProcessed) = Processing.CWT.transformTemperatureData fromDate toDate trace
-        
+
+        //CWT-chart
         let heatmap = 
             let lables = 
                 traceProcessed.[0] |> Array.map fst
             traceProcessed
             |> Array.map (fun ia -> ia |> Array.map snd)
-            |> fun x ->  Chart.Heatmap(x,Colorscale=StyleParam.Colorscale.Portland,ColNames=lables,RowNames=rownames,Showscale=false) //here caution
-
+            |> fun x ->  Chart.Heatmap(x,Colorscale=StyleParam.Colorscale.Portland,ColNames=lables,RowNames=rownames,Showscale=false)
             |> Chart.withAxisAnchor(X=1)
-            |> Chart.withAxisAnchor(Y=1) 
+            |> Chart.withAxisAnchor(Y=1)
 
+        //Rawchart
         let rawChart = 
             Chart.Line (traceRaw,Color = "#1f77b4",Name = "raw")
             |> Chart.withAxisAnchor(X=2)
             |> Chart.withAxisAnchor(Y=2) 
-
+        //combine the charts and add additional styling (see above)
         Chart.Combine([heatmap;rawChart])
         |> Chart.withX_AxisStyle("Date",Side=StyleParam.Side.Bottom,Id=2,Showgrid=false)
         |> Chart.withX_AxisStyle("", Side=StyleParam.Side.Top, Showline=false,Showgrid=false, Id=1,Overlaying=StyleParam.AxisAnchorId.X 2)
@@ -622,11 +637,9 @@ module Charting =
         |> GenericChart.toEmbeddedHTML
 
 
-   
-///////////////////////
-////////charting//////
+
 module RainData =
-    
+    ///stores information about the rain data from the ftp server
     type Rain = {
         Year      : int
         Month     : int
@@ -640,7 +653,8 @@ module RainData =
         Amount    : float
         Date      : DateTime
         }
-    
+
+    ///create the Rain type
     let createRain year month day hour minute hhmm summertime yyyymmdd quality amount date= 
         {
         Year      = year
@@ -688,12 +702,12 @@ module RainData =
         //extract the .zip folder to the destination directory
         Compression.ZipFile.ExtractToDirectory(destination,destination.Substring(0,destination.Length-4))
 
-            
+    ///downloads the latest rain data and extracts all rain events since fromDate      
     let readRainData fromDate = 
 
         //downloads the latest rain data
         downloadRainData()
-        //german summertime is set as default time
+        //German summertime is set as default time
         let summertime = true
         let rainDataFilePath = 
             let src = __SOURCE_DIRECTORY__ + @"\content\raindata\"
@@ -724,6 +738,7 @@ module RainData =
             let datestring = x.[1] 
             //the data given by the DWD specifies the rain fallen during the last 10 minutes, so 10 minutes are subtracted            
             let date =      
+                //convert UTC to German time
                 let utcTime = System.DateTime.ParseExact(datestring,"yyyyMMddHHmm",null).AddMinutes(-10.)
                 if summertime then 
                     utcTime.AddHours(2.)
@@ -736,9 +751,9 @@ module RainData =
             rt)
 
 
-
+    //automatically fetches the latest rain data since the last time fetched and updates the temperature measurement items int the data base
     let updateTemperatureDataWithRain() =
-        //updates the rainData database table with the date of the last fetched ftp-Data
+        //updates the rainData database table with the date of the last fetched ftp-Data (today - 15 days to have a overhead)
         let updateRainFetchDate() =
             let date = System.DateTime.Now.AddDays(-15.).ToString("yyMMddHHmmss") |> int64
             use cn = Database.getCn()
@@ -770,10 +785,10 @@ module RainData =
         use cn = Database.getCn()
         cn.Open()
 
-        let dateOfLastRainFetch = //1905171449
+        let dateOfLastRainFetch = 
             let querystring = 
                 "SELECT LastFetch FROM RainData WHERE ID = '1'"
-            let cmd = new SQLiteCommand(querystring, cn)//, tr)
+            let cmd = new SQLiteCommand(querystring, cn)
             use reader = cmd.ExecuteReader()
             reader.Read() |> ignore
             reader.GetInt64(0)
@@ -818,16 +833,9 @@ module RainData =
         cn.Close()
             
     
-     //   let updateString = 
-     //       "SELECT * FROM TemperatureData WHERE DateTime > @fetchdate"
-     //   
-     //   use cmd  = new SQLiteCommand(updateString, cn)
-     //   cmd.Parameters.Add("@fetchdate", System.Data.DbType.Int64) |> ignore
-     //   cmd.Parameters.["@fetchdate"].Value <- dateOfLastRainFetch
-//
-//
-     //   Database.updateDbItem
+
 module Care =
+    //for initializing the data base
     let insertTemperatureEventsFromFile filepath = 
         use cn = Database.getCn()
         cn.Open() 
@@ -840,7 +848,7 @@ module Care =
         |> Array.mapi (fun i x ->   
             printfn "%i" i
             let tmp = x.Split([|'\t'|])
-            let date = tmp.[0].Replace("/",".")//.Remove(6,2)  // "dd.MM.yyyy HH:mm:ss"
+            let date = tmp.[0].Replace("/",".")
             let jsonFormat = {
                 D   = date
                 T1  = tmp.[1] |> float
@@ -853,7 +861,6 @@ module Care =
                 }        
             Database.insertDbItemWithRain jsonFormat (tmp.[8] |> float) cn) |> ignore
         cn.Close()         
-    //insertTemperatureEventsFromFile ((*__SOURCE_DIRECTORY__ + @"\content\exampleData.txt"*) @"C:\Users\bvenn\Documents\Projects\SFB\AlgaeWatch\merge.txt") |> ignore
 
 
 let config =
@@ -861,10 +868,13 @@ let config =
           homeFolder = Some publicPath
           bindings = [ HttpBinding.create HTTP (IPAddress.Parse "0.0.0.0") port ] }
 
+
 let loggingAPI : ILoggingAPI= 
     {
+    //get overview plot
     GetPlot = fun () -> 
         async {return (System.IO.File.ReadAllLines(oldPlotPath + @"/lastYearSmall.txt") |> String.concat "\n")}
+    //get 'from-to' plot
     GetPlotChunk = fun date -> 
         let dateFrom = 
             date.Split([|'-'|])
@@ -872,14 +882,8 @@ let loggingAPI : ILoggingAPI=
         let dateTo = 
             date.Split([|'-'|])
             |> fun x -> x.[1].Replace(" ","") + "000000" |> int64        
-        //Database.insertFstRainFetch() //first time!!
-        //RainData.updateRainFetchDate()
-        //Database.updateDbItem 190516170502L 43.
-        //RainData.updateTemperatureDataWithRain()
-        //async {return (System.IO.File.ReadAllLines(oldPlotPath + @"/testPlot.html") |> String.concat "\n")}  
-        //async {return (Charting.chart 190501000000L 190530000000L )}
-        //async {return (Charting.chart 190501000000L 190520000000L)}
         async {return (Charting.chart dateFrom dateTo)}
+    //get wavelet plot
     GetPlotWavelet = fun (date,trace)-> 
         let dateFrom = 
             date.Split([|'-'|])
@@ -896,9 +900,10 @@ let loggingAPI : ILoggingAPI=
         | "T6" -> async {return (Charting.waveletChart dateFrom dateTo Processing.CWT.T6 "Temperature [Celsius]")} 
         | "Light" -> async {return (Charting.waveletChart dateFrom dateTo Processing.CWT.Light "Light [AU]")} 
         | _ -> async {return (Charting.waveletChart dateFrom dateTo Processing.CWT.Rain "Rain l/m^2/10min")} 
-               
+    //get JSON string transmitted from arduino and insert it into the database        
     ArduinoPost = fun transmit -> 
-        async {return (Database.insertDbItem transmit)}    
+        async {return (Database.insertDbItem transmit)}
+    //fetch the latest rain data
     FetchRain = fun () ->
         async {return (RainData.updateTemperatureDataWithRain())}    
 }

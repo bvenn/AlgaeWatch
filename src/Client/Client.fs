@@ -12,38 +12,58 @@ open Fulma
 open Shared
 
 
-
-// The model holds data that you want to keep track of while the application is running
-// in this case, we are keeping track of a counter
-// we mark it as optional, because initially it will not be available from the client
-// the initial value will be requested from server
-type Model = { 
-    ArbState : ArbVal option
+//
+type Model = {
+    //contains the plot html as string
     PlotHTML : string
+    //is the server processing the overview html?
     Loading : bool
+    //clicked on "from-to"
     ClickedOnChunk : bool
+    //loading screen for "from-to"
     LoadingChunk : bool
+    //clicked on "wavelet"
     ClickedOnWavelet : bool
+    //trace selection buttons for "wavelet"
     TraceSelectionMdl : bool
+    //loading screen for "wavelet"
     LoadingWavelet : bool
+    //contains the string entered in "from-to"
     SearchBarChunkMdl : string
+    //contains the string entered in "wavelet"
     SearchBarWaveletMdl : string
+    //contains the trace processed by 'wavelet'
     WaveletTrace : string
     }
 
 // The Msg type defines what events/actions can occur while the application is running
 // the state of the application changes *only* in reaction to these events
 type Msg =
+//overviewPlot
 | GetPlotRequest
+//returns the plot html as string
 | GetPlotResponse of Result<string, exn>
-| GetPlotWaveletRequest
-| GetPlotWaveletResponse of Result<string, exn>
-| GetPlotChunkRequest
-| GetPlotChunkResponse of Result<string, exn>
-| FetchRainResponse of Result<unit, exn>
 | PlotLoadingYear
+
+//chunkProcessing
+| ChunkClick
+| SearchBarChunk
+//returns the text entered into the 'get-from' search bar
+| UpdateChunkSearchBar of string
+| GetPlotChunkRequest
+//returns the plot html as string
+| GetPlotChunkResponse of Result<string, exn>
 | PlotLoadingChunk
-| FetchRain
+
+//waveletProcessing
+| WaveletClick
+| SearchBarWavelet
+//returns the text entered into the 'wavelet' search bar
+| UpdateWaveletSearchBar of string
+| GetPlotWaveletRequest
+//returns the plot html as string
+| GetPlotWaveletResponse of Result<string, exn>
+| TraceSelectionWavelet
 | PlotLoadingWavelet1
 | PlotLoadingWavelet2
 | PlotLoadingWavelet3
@@ -52,13 +72,11 @@ type Msg =
 | PlotLoadingWavelet6
 | PlotLoadingWaveletLight
 | PlotLoadingWaveletRain
-| ChunkClick
-| WaveletClick
-| SearchBarChunk
-| SearchBarWavelet
-| TraceSelectionWavelet
-| UpdateChunkSearchBar of string
-| UpdateWaveletSearchBar of string
+
+//rain
+//returns unit, because the data is directly written to the database
+| FetchRainResponse of Result<unit, exn> 
+| FetchRain
 
 
 
@@ -67,7 +85,6 @@ module Server =
     open Shared
     open Fable.Remoting.Client
     
-    /// A proxy you can use to talk to server directly
     let api : ILoggingAPI =
       Remoting.createApi()
       |> Remoting.withRouteBuilder Route.builder
@@ -75,14 +92,10 @@ module Server =
 
 
 module RequestHelpers =
+    //overviewPlot
+    //
     let createLoadingCmdPlot =
         Cmd.ofMsg GetPlotRequest
-
-    let createLoadingCmdChunk =
-        Cmd.ofMsg GetPlotChunkRequest   
-
-    let createLoadingCmdWavelet =
-        Cmd.ofMsg GetPlotWaveletRequest        
 
     let createGetPlotCmd =      
         Cmd.OfAsync.either
@@ -90,30 +103,43 @@ module RequestHelpers =
             ()
             (Ok >> GetPlotResponse)
             (Error >> GetPlotResponse)
-
+    
+    //chunkPlot
+    //command to open the search bar when clicked on from-to
     let openSearchBarChunkCmd =      
-        Cmd.ofMsg ChunkClick     
-
-    let openSearchBarWaveletCmd =      
-        Cmd.ofMsg WaveletClick            
-
-    let openTraceSelectionCmd =      
-        Cmd.ofMsg TraceSelectionWavelet            
-
-    let createGetPlotChunkCmd input=
+        Cmd.ofMsg ChunkClick
+    //when entered the dates, the loading is initialized
+    let createLoadingCmdChunk =
+        Cmd.ofMsg GetPlotChunkRequest   
+    //while loading the plot gets generated with input: the date from/to wich the plot should range ("yyMMdd - yyMMdd")
+    let createGetPlotChunkCmd dates=
         Cmd.OfAsync.either
             Server.api.GetPlotChunk 
-            input
+            dates
             (Ok >> GetPlotChunkResponse)
             (Error >> GetPlotChunkResponse)        
 
-    let createGetPlotWaveletCmd date trace=
+    //wavelet
+    //command to open the search bar when clicked on wavelet
+    let openSearchBarWaveletCmd =      
+        Cmd.ofMsg WaveletClick
+        
+    //when entered the dates, the trace selection for continuous wavelet transformation is displayed
+    let openTraceSelectionCmd =      
+        Cmd.ofMsg TraceSelectionWavelet            
+    //when the trace is selected, the loading is initialized
+    let createLoadingCmdWavelet =
+        Cmd.ofMsg GetPlotWaveletRequest        
+    //while loading the plot gets generated with input: the date from/to wich the plot should range ("yyMMdd - yyMMdd") and the specified trace as string e.g. "T1"
+    let createGetPlotWaveletCmd dates trace=
         Cmd.OfAsync.either
             Server.api.GetPlotWavelet 
-            (date,trace)
+            (dates,trace)
             (Ok >> GetPlotWaveletResponse)
             (Error >> GetPlotWaveletResponse)
 
+    //rain
+    //when clicked on fetch rain data the rain data is downloaded and integrated into the data base
     let fetchRainCmd =
         Cmd.OfAsync.either
             Server.api.FetchRain
@@ -128,16 +154,15 @@ module RequestHelpers =
 // defines the initial state and initial command (= side-effect) of the application
 let init () : Model * Cmd<Msg> =
     let initialModel = { 
-        ArbState = None 
         PlotHTML = ""
         Loading = false 
         ClickedOnChunk = false
+        SearchBarChunkMdl = ""
         LoadingChunk = false
         ClickedOnWavelet = false
-        LoadingWavelet = false
-        SearchBarChunkMdl = ""
         SearchBarWaveletMdl = ""
         TraceSelectionMdl = false
+        LoadingWavelet = false
         WaveletTrace = ""}
     initialModel, Cmd.none
 
@@ -148,8 +173,10 @@ let init () : Model * Cmd<Msg> =
 // these commands in turn, can dispatch messages to which the update function will react.
 let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
     match  msg with
+    //overviewPlot
     | PlotLoadingYear -> 
         let nextModel =
+            //when clicked on 'last year' the other buttons should be resetted and the over view plot should be loaded
             { currentModel with Loading = true; ClickedOnChunk = false;ClickedOnWavelet = false;PlotHTML=""}
         nextModel,RequestHelpers.createLoadingCmdPlot     
     | GetPlotRequest -> currentModel,RequestHelpers.createGetPlotCmd 
@@ -166,13 +193,13 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                 }
         nextModel,Cmd.none
 
+
     //Chunk
     | SearchBarChunk ->
         let nextModel = 
-            {
-                currentModel with PlotHTML="";ClickedOnChunk = (not currentModel.ClickedOnChunk);ClickedOnWavelet = false//currentModel with ClickedOnChunk = true
-            }
-        nextModel,Cmd.none    
+            //the current plot is resetted and the click button changes its color. The wavelet click is resetted
+            {currentModel with PlotHTML="";ClickedOnChunk = (not currentModel.ClickedOnChunk);ClickedOnWavelet = false}
+        nextModel,Cmd.none
     | PlotLoadingChunk -> 
         let nextModel =
             { currentModel with PlotHTML="";LoadingChunk = true}
@@ -194,7 +221,7 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
 
     //FetchRainResponse
     | FetchRainResponse (Ok res) ->    
-        currentModel, Cmd.none    
+        currentModel,Cmd.none    
     | FetchRainResponse (Error ex)  -> 
         currentModel,Cmd.none  
     | FetchRain -> 
@@ -203,17 +230,23 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
 
     //Wavelet
     | SearchBarWavelet ->
-        let nextModel = 
-            {
-                currentModel with PlotHTML="";ClickedOnWavelet = (not currentModel.ClickedOnWavelet);ClickedOnChunk = false;TraceSelectionMdl = false//currentModel with ClickedOnChunk = true
-            }
+        let nextModel =
+            //when clicked on wavelet, the plotand the chunk button are resetted
+            {currentModel with PlotHTML="";ClickedOnWavelet = (not currentModel.ClickedOnWavelet);ClickedOnChunk = false;TraceSelectionMdl = false}
         nextModel,Cmd.none    
+    | UpdateChunkSearchBar (input)  -> 
+        let nextModel =
+                {
+                    currentModel with PlotHTML="";SearchBarChunkMdl = input
+                }
+        nextModel,Cmd.none
     | TraceSelectionWavelet -> 
         let nextModel =
             {
                 currentModel with TraceSelectionMdl = true
             }
         nextModel,Cmd.none
+    //because the chart needs a trace as input, a string is given, that defines the sensor
     | PlotLoadingWavelet1 -> 
         let nextModel =
             { currentModel with PlotHTML="";LoadingWavelet = true;WaveletTrace = "T1"}
@@ -260,21 +293,15 @@ let update (msg : Msg) (currentModel : Model) : Model * Cmd<Msg> =
                     currentModel with PlotHTML = ex.Message; LoadingWavelet=false
                 }
         nextModel,Cmd.none  
-    | UpdateChunkSearchBar (input)  -> 
-        let nextModel =
-                {
-                    currentModel with PlotHTML="";SearchBarChunkMdl = input
-                }
-        nextModel,Cmd.none
     | UpdateWaveletSearchBar (input)  -> 
         let nextModel =
                 {
                     currentModel with PlotHTML="";SearchBarWaveletMdl = input
                 }
-        nextModel,Cmd.none//RequestHelpers.createGetPlotWaveletCmd     
+        nextModel,Cmd.none  
     | _ -> currentModel, Cmd.none
 
-
+//credits for footer
 let safeComponents =
     let components =
         span [ ]
@@ -294,47 +321,41 @@ let safeComponents =
         [ str " powered by: "
           components ]
 
-
-let showArb = function
-| { ArbState = Some arbstate } -> "\n\r" + (sprintf "%.2f" arbstate.ValueA)
-| { ArbState = None   } -> "Loading..."
-
-
+//default button
 let button (model:Model) txt onClick =
-    //let buttonCol = if model.ClickedOnChunk then (Button.CustomClass "button") else ( Button.CustomClass "redbutton")
     Button.button
         [ Button.IsFullWidth
-          //Button.Color IsPrimary
           Button.CustomClass "button"
           Button.OnClick onClick ]
         [ str txt ]
 
+//red button for rain data fetch
 let fetchbutton txt onClick =
     Button.button
         [ Button.IsFullWidth
-          //Button.Color IsPrimary
           Button.CustomClass "redbutton"
           Button.OnClick onClick ]
         [ str txt ]
 
+//from-to button changes color when clicked
 let fromToButton (model:Model) txt onClick =
     let buttonCol = if model.ClickedOnChunk then (Button.CustomClass "redbutton") else ( Button.CustomClass "button")
     Button.button
         [ Button.IsFullWidth
-          //Button.Color IsPrimary
           buttonCol
           Button.OnClick onClick ]
         [ str txt ]
 
+//wavelet button changes color when clicked
 let waveletButton (model:Model) txt onClick =
     let buttonCol = if model.ClickedOnWavelet then (Button.CustomClass "redbutton") else ( Button.CustomClass "button")
     Button.button
         [ Button.IsFullWidth
-          //Button.Color IsPrimary
           buttonCol
           Button.OnClick onClick ]
         [ str txt ]    
 
+//contains the loading gif url and centers it to the screen
 let loading = 
     Columns.columns []
         [   
@@ -353,6 +374,7 @@ let loading =
                               
         ]
 
+//because the wavelet transform takes a few seconds, an additional notification is added
 let loadingWavelet = 
     Columns.columns []
         [   
@@ -372,6 +394,8 @@ let loadingWavelet =
                               
         ]
 
+
+//main view
 let view (model : Model) (dispatch : Msg -> unit) =
     
     div []
@@ -394,18 +418,16 @@ let view (model : Model) (dispatch : Msg -> unit) =
               [ Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ]
                     []
                 Columns.columns []
-                    [ 
+                    [ //the four buttons are separated into 4 columns
                       Column.column [] [ button model "show last year" (fun _ -> dispatch PlotLoadingYear) ] 
                       Column.column [] [ fromToButton model "show from-to" (fun _ -> dispatch SearchBarChunk) ] 
                       Column.column [] [ waveletButton model "show wavelet from to" (fun _ -> dispatch SearchBarWavelet)] 
                       Column.column [] [ fetchbutton "Fetch rain data" (fun _ -> dispatch FetchRain) ] 
                       ]
 
-
-
-                
                 Columns.columns [Columns.CustomClass "outerFrame"; Columns.IsCentered ] [
                     Column.column [Column.Width (Screen.Desktop,Column.Is12)] [
+                        //when clicked on "from-to" to get a chunk of the data presented as Plotly chart
                         if model.ClickedOnChunk then
                             yield 
                                     Columns.columns [ ]
@@ -416,7 +438,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                             Level.item [ ]
                                                 [ Field.div [ Field.HasAddons ]
                                                     [ Control.div [ ]
-                                                        [ Input.text [  Input.Placeholder ("yyMMdd - yyMMdd" )
+                                                        [ Input.text [  //the placeholder defines the data format
+                                                                        Input.Placeholder ("yyMMdd - yyMMdd" )
                                                                         Input.OnChange (fun e ->    let x = !!e.target?value
                                                                                                     dispatch (UpdateChunkSearchBar x)
                                                                                                     
@@ -424,7 +447,8 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                                                    ]
                                                                   ]
                                                       Control.div [ ] [
-                                                                   button model "from-to" (fun _ -> dispatch PlotLoadingChunk)
+                                                                    //when clicked on from-to dispatch PlotLoadingChunk
+                                                                    button model "from-to" (fun _ -> dispatch PlotLoadingChunk)
                                                                   ]
                                                     ]
                                                 ]
@@ -432,6 +456,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                          Column.column [] []
                                          Column.column [] []                                       
                                         ]
+                        //happens when it was clicked on 'wavelet'
                         elif model.ClickedOnWavelet then                
                             yield 
                                     Columns.columns [ ]
@@ -451,13 +476,15 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                                                    ]
                                                                   ]
                                                       Control.div [ ] [
-                                                                   button model "from-to" (fun _ -> dispatch TraceSelectionWavelet)
+                                                            //when clicked on "from-to" open the trace selection buttons (T1 to Rain)
+                                                            button model "from-to" (fun _ -> dispatch TraceSelectionWavelet)
                                                                   ]
                                                     ]
                                                 ]
-                                           ]
+                                            ]
                                          Column.column [] []                                       
-                                        ]    
+                                        ]
+                            //open the trace selection buttons (T1 to Rain)
                             if model.TraceSelectionMdl then                  
                                               
                                 yield 
@@ -484,8 +511,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                                ]
                                             Column.column [] []                                       
                                             ]
-                                                                                                                        
-                        
+                        //loading...                                                                                               
                         if model.Loading then
                             yield 
                                 loading
@@ -496,6 +522,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                             yield 
                                 loadingWavelet                                                 
                         else
+                            //iframe to display the plot
                             yield iframe 
                                     [
                                       SrcDoc model.PlotHTML
@@ -517,7 +544,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                         
                             Column.column [] [
                             Content.content [ Content.Modifiers [ Modifier.TextAlignment (Screen.All, TextAlignment.Centered) ] ] 
-                                    [   //span [] [str "Documentation: "]
+                                    [   
                                         a [ Href "https://github.com/bvenn/AlgaeWatch" ] [ str "Documentation" ] ] ] 
                         
                             Column.column [] [
