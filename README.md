@@ -4,7 +4,7 @@ AlgaeWatch is a **bioinformatics/IoT** data logging project emerged from the int
 
 To study the naturally occurring variations of the water temperature in ponds and to determine its stages in the yearly development I decided to use a data logger to collect water temperatures in several depths. Additionally, I aimed to collect light intensity data for monitoring the cloud conditions. I quickly realised most commercially available loggers lack at least one of the following criteria:
 
-1. **water resistance (of the sensors themselves, as well as the main module)**
+1. **water resistance** (of the sensors themselves, as well as the main module)
 2. **energy consumption**
     - when used in remote areas the sensor should run independently for many days
 3. **size**
@@ -114,11 +114,11 @@ After entering the `fake build -t Run` command, you can open your Browser on htt
 There are four options to choose from. By clicking `show last year` an interactive Plotly chart is loaded. This chart shows temperature data from all 6 temperature sensors, the light sensor, and the fetched rain data from the DWD.
 Increasing indices [T1 .. T6] imply lower depth of the sensor.
 
+![Overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/02_Overview2.png)
+
 It is obvious, that there were some connection problems in the initial phase of the sensor and you can see how Sensor T2 was no longer covered with water during autumn 2018.
 From December to February the pond was frozen in the top layer, but the deepest sensors recorded temperatures up to 7.5 °C.
 The light sensor measures in arbitrary units from 0 to 1024. The rain data show clearly the severe drought in Germany in autumn 2018.
-
-![Overview](https://raw.githubusercontent.com/bvenn/AlgaeWatch/master/src/Client/public/Screenshots/02_Overview2.png)
 
 
 When clicking on the second button "show from-to" you can specify the time period the plot should cover. Hereby, the data is aquired from the SQLite data base.
@@ -147,8 +147,8 @@ You will find more documentation about the used F# components at the following p
 * [Fulma](https://fulma.github.io/Fulma/)
 
 The project runs on a web server locally, but hosting SAFE stack solutions on a private server via the run command proved difficult.
-While i was able to make the api work for server requests, i was not able to host the site itself. This seems to be an issue proxying request between local host and the actual server port. 
+While I was able to make the api work for server requests, I was not able to host the site itself. This seems to be an issue proxying request between local host and the actual server port. 
 As soon as I find a solution I am going to post its adress here.
 
 
-**By finishing AlgaeWatch I am able to monitor the state of the pond and get real time insights into the environmental conditions the organisms have to face. With this project I hope to contribute to increasing the popularity of F# in signal processing and IoT even further.** 
+**By finishing AlgaeWatch I am able to monitor the state of the pond and get real time insights into the environmental conditions the organisms have to face. The wavelet approach provides a powerful tool to study occuring frequencies in the data and by collecting more data I hopefully will see some interesting properties. With this project I hope to contribute to increasing the popularity of F# in signal processing and IoT even further.** 
