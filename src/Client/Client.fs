@@ -499,7 +499,7 @@ let view (model : Model) (dispatch : Msg -> unit) =
                                                                 [ 
                                                                   Column.column [] [button model "T1" (fun _ -> dispatch    PlotLoadingWavelet1 )]
                                                                   Column.column [] [button model "T2" (fun _ -> dispatch    PlotLoadingWavelet2 )]
-                                                                  Column.column [] [button model "T2" (fun _ -> dispatch    PlotLoadingWavelet3 )]
+                                                                  Column.column [] [button model "T3" (fun _ -> dispatch    PlotLoadingWavelet3 )]
                                                                   Column.column [] [button model "T4" (fun _ -> dispatch    PlotLoadingWavelet4 )]
                                                                   Column.column [] [button model "T5" (fun _ -> dispatch    PlotLoadingWavelet5 )]
                                                                   Column.column [] [button model "T6" (fun _ -> dispatch    PlotLoadingWavelet6 )]

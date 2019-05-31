@@ -486,7 +486,7 @@ module Processing =
                 
                 let correlationValue = 
                     (rightSide 1 0.) + (leftSide -1 0.) + transformAtX
-                currentX,correlationValue / (Math.Sqrt ricker.Scale)
+                currentX,correlationValue / (Math.Sqrt (Math.Abs(ricker.Scale)))
                 )
 
         ///all existing sensors
